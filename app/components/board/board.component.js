@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useContext, useEffect, useState} from "react";
 import { View, Text, StyleSheet } from 'react-native';
 import PlayerDeck from "./decks/player-deck.component";
 import OpponentDeck from "./decks/opponent-deck.component";
@@ -6,6 +6,7 @@ import PlayerTimer from "./timers/player-timer.component";
 import OpponentTimer from "./timers/opponent-timer.component";
 import Choices from "./choices/choices.component";
 import Grid from "./grid/grid.component";
+import {SocketContext} from "../../contexts/socket.context";
 
 const OpponentInfos = () => {
   return (
@@ -31,54 +32,64 @@ const PlayerInfos = () => {
   );
 };
 
-const PlayerScore = () => {
-
+const PlayerScore = ({ token, score }) => {
   return (
-    <View style={styles.playerScoreContainer}>
-      <Text>PlayerScore</Text>
-    </View>
+      <View style={styles.playerScoreContainer}>
+        <Text>Token: {token}</Text>
+        <Text>Score: {score}</Text>
+      </View>
   );
 };
 
 const Board = ({ gameViewState }) => {
+  const [playerToken, setPlayerToken] = useState(0);
+  const [playerScore, setPlayerScore] = useState(0);
+  const socket = useContext(SocketContext);
+  useEffect(() => {
+
+    socket.on('game.scoreAndToken', ({ score, token }) => {
+      setPlayerScore(score);
+      setPlayerToken(token);
+    });
+
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
+      <View style={styles.container}>
+        <View style={[styles.row, { height: '5%' }]}>
+          <OpponentInfos />
+          <View style={styles.opponentTimerScoreContainer}>
+            <OpponentTimer />
+            <OpponentScore />
+          </View>
+        </View>
 
-    <View style={styles.container}>
+        <View style={[styles.row, { height: '25%' }]}>
+          <OpponentDeck />
+        </View>
 
-      <View style={[styles.row, { height: '5%' }]}>
-        <OpponentInfos />
-        <View style={styles.opponentTimerScoreContainer}>
-          <OpponentTimer />
-          <OpponentScore />
+        <View style={[styles.row, { height: '40%' }]}>
+          <Grid />
+          <Choices />
+        </View>
+
+        <View style={[styles.row, { height: '25%' }]}>
+          <PlayerDeck />
+        </View>
+
+        <View style={[styles.row, { height: '5%' }]}>
+          <PlayerScore token={playerToken} score={playerScore} /> {/* Pass token and score as props */}
+          <View style={styles.playerTimerScoreContainer}>
+            <PlayerTimer />
+          </View>
         </View>
       </View>
-
-      <View style={[styles.row, { height: '25%' }]}>
-        <OpponentDeck />
-      </View>
-
-      <View style={[styles.row, { height: '40%' }]}>
-        <Grid />
-        <Choices />
-      </View>
-
-      <View style={[styles.row, { height: '25%' }]}>
-        <PlayerDeck />
-      </View>
-
-      <View style={[styles.row, { height: '5%' }]}>
-        <PlayerInfos />
-        <View style={styles.playerTimerScoreContainer}>
-          <PlayerTimer />
-          <PlayerScore />
-        </View>
-      </View>
-
-    </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

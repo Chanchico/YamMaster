@@ -11,6 +11,7 @@ const PlayerDeck = () => {
   const [displayRollButton, setDisplayRollButton] = useState(false);
   const [rollsCounter, setRollsCounter] = useState(0);
   const [rollsMaximum, setRollsMaximum] = useState(3);
+  const [defiActivate, setDefiActivate] = useState(false)
 
   useEffect(() => {
 
@@ -26,6 +27,12 @@ const PlayerDeck = () => {
       }
 
     });
+    socket.on("game.defi.activate", ({activate}) => {
+      if  (activate) {
+        setDefiActivate(true)
+      }else { setDefiActivate(false)}
+    });
+
 
   }, []);
 
@@ -42,6 +49,10 @@ const PlayerDeck = () => {
     if (rollsCounter <= rollsMaximum) {
       socket.emit("game.dices.roll");
     }
+  };
+
+  const handleActivateDefi = () => {
+    socket.emit("game.defi.activated")
   };
 
   return (
@@ -83,9 +94,17 @@ const PlayerDeck = () => {
               </TouchableOpacity>
             </>
 
+
+
           )}
         </>
       )}
+      {defiActivate &&
+        <TouchableOpacity style={styles.rollButton} onPress={handleActivateDefi}>
+          <Text style={styles.rollButtonText}>Activate Defi</Text>
+        </TouchableOpacity>
+      }
+
 
     </View>
   );

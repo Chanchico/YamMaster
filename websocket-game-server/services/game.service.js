@@ -35,20 +35,20 @@ const GRID_INIT = [
         { viewContent: '2', id: 'brelan2', owner: null, canBeChecked: false },
         { viewContent: 'Carré', id: 'carre', owner: null, canBeChecked: false },
         { viewContent: 'Sec', id: 'sec', owner: null, canBeChecked: false },
-        { viewContent: 'Full', id: 'full', owner: null, canBeChecked: false },
+        { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false },
         { viewContent: '5', id: 'brelan5', owner: null, canBeChecked: false },
     ],
     [
         { viewContent: '≤8', id: 'moinshuit', owner: null, canBeChecked: false },
-        { viewContent: 'Full', id: 'full', owner: null, canBeChecked: false },
+        { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false },
         { viewContent: 'Yam', id: 'yam', owner: null, canBeChecked: false },
         { viewContent: 'Défi', id: 'defi', owner: null, canBeChecked: false },
-        { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false },
+        { viewContent: 'Full', id: 'full', owner: null, canBeChecked: false },
     ],
     [
         { viewContent: '6', id: 'brelan6', owner: null, canBeChecked: false },
         { viewContent: 'Sec', id: 'sec', owner: null, canBeChecked: false },
-        { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false },
+        { viewContent: 'Full', id: 'full', owner: null, canBeChecked: false },
         { viewContent: '≤8', id: 'moinshuit', owner: null, canBeChecked: false },
         { viewContent: '1', id: 'brelan1', owner: null, canBeChecked: false },
     ],
@@ -83,8 +83,13 @@ const GAME_INIT = {
         timer: null,
         player1Score: 0,
         player2Score: 0,
+        player1Token: 12,
+        player2Token: 12,
         choices: {},
-        deck: {}
+        deck: {},
+        isDefi: false,
+        isFinished: false,
+        winner: null,
     }
 }
 
@@ -222,7 +227,7 @@ const GameService = {
 
     choices: {
         findCombinations: (dices, isDefi, isSec) => {
-            console.log(dices, isDefi, isSec)
+            // console.log(dices, isDefi, isSec)
             const availableCombinations = [];
             const allCombinations = ALL_COMBINATIONS;
 
@@ -272,14 +277,15 @@ const GameService = {
             // Retourner les combinaisons possibles via leur ID
             allCombinations.forEach(combination => {
                 if (
-                    (combination.id.includes('brelan') && hasThreeOfAKind && parseInt(combination.id.slice(-1)) === threeOfAKindValue) ||
-                    (combination.id === 'full' && hasPair && hasThreeOfAKind) ||
-                    (combination.id === 'carre' && hasFourOfAKind) ||
-                    (combination.id === 'yam' && hasFiveOfAKind) ||
-                    (combination.id === 'suite' && hasStraight) ||
-                    (combination.id === 'moinshuit' && isLessThanEqual8) ||
-                    (combination.id === 'defi' && isDefi)
+                    ((combination.id.includes('brelan') && hasThreeOfAKind && parseInt(combination.id.slice(-1)) === threeOfAKindValue) && !isDefi)||
+                    ((combination.id === 'full' && hasPair && hasThreeOfAKind) && !isDefi) ||
+                    ((combination.id === 'carre' && hasFourOfAKind) && !isDefi) ||
+                    ((combination.id === 'yam' && hasFiveOfAKind) && !isDefi) ||
+                    ((combination.id === 'suite' && hasStraight) &&  !isDefi)||
+                    ((combination.id === 'moinshuit' && isLessThanEqual8) &&  !isDefi) ||
+                    (combination.id === 'defi' && isDefi && ((hasPair && hasThreeOfAKind ) ||hasFourOfAKind || hasFiveOfAKind || hasStraight ||isLessThanEqual8))
                 ) {
+                    console.log(isDefi)
                     availableCombinations.push(combination);
                 }
             });
@@ -290,9 +296,18 @@ const GameService = {
             if (isSec && availableCombinations.length > 0 && notOnlyBrelan) {
                 availableCombinations.push(allCombinations.find(combination => combination.id === 'sec'));
             }
-            console.log(availableCombinations)
+            //console.log(availableCombinations)
             return availableCombinations;
+        },
+        decrementToken: (state) => {
+            if(state.currentTurn  === 'player:1'){
+                state.player1Token --;
+            }else {
+                state.player2Token --;
+            }
+            return state;
         }
+
     },
 
     grid: {
@@ -314,16 +329,12 @@ const GameService = {
                     return cell;
                 }
             }));
-            console.log("###########################")
-            console.log("UPDATE_GRID_AFTER_SELECTING_CHOICE")
-            console.log(updatedGrid)
-            console.log("###########################")
             return updatedGrid;
         },
 
         selectCell: (idCell, rowIndex, cellIndex, currentTurn, grid) => {
             const updatedGrid = grid.map((row, rowIndexParsing) => row.map((cell, cellIndexParsing) => {
-                if ((cell.id === idCell) && (rowIndexParsing === rowIndex) && (cellIndexParsing === cellIndex)) {
+                if ((cell.id === idCell) && (rowIndexParsing === rowIndex) && (cellIndexParsing === cellIndex && cell.owner === null)) {
                     return { ...cell, owner: currentTurn };
                 } else {
                     return cell;
@@ -339,7 +350,7 @@ const GameService = {
         checkScore: ( rowIndex, cellIndex, gameState, grid) => {
             // The idea is to traverse the entire grid and see if the current coordinates are aligned with the token that
             // has just been placed.
-            const infoCurrentCell  = { row : rowIndex, colum: cellIndex, haveScored: grid[rowIndex][cellIndex].haveScored }
+            const infoCurrentCell  = { row : rowIndex, column: cellIndex, haveScored: grid[rowIndex][cellIndex].haveScored }
             const rowCoordinateToScore = [infoCurrentCell];
             const colCoordinateToScore = [infoCurrentCell];
             const topBottomDiagCoordinateToScore = [infoCurrentCell]
@@ -349,62 +360,181 @@ const GameService = {
                     arr.push(obj);
                 }
             }
-            for (let rowN = 0; rowN < 5; rowN++) {
-                for (let colN = 0; colN < 5; colN++) {
-                    if(grid[rowN][colN].owner === gameState.currentTurn ) {
-                        const cellInfo = { row : rowN, colum: colN, haveScored: grid[rowN][colN].haveScored }
-                        if (rowN === rowIndex ) {
-                            // console.log(`On rowIndex ${rowN}, ${colN}`)
-                            addUniqueObject(rowCoordinateToScore, cellInfo)
+            const southWest = (rowIndex, cellIndex, aligned_row, aligned_col, aligned_top_bottom, grid, currentTurn) => {
+                let frow = true;
+                let fcol = true;
+                let ftb = true;
+                for (let rowN = rowIndex; rowN < 5; rowN++) {
+                    for (let colN = cellIndex; colN < 5; colN++) {
+                        const cellInfo = { row : rowN, column: colN, haveScored: grid[rowN][colN].haveScored }
+                        // console.log(grid[rowN][colN]);
+                        if (rowN === rowIndex && frow) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_row, cellInfo);
+                            } else {
+                                frow = false;
+                            }
                         }
-                        if (colN === cellIndex ) {
-                            // console.log(`On cellIndex${rowN}, ${colN}`)
-                            addUniqueObject(colCoordinateToScore, cellInfo)
-                        }
-
-                        // Comme ca on evite d'entrée dans la boucle
-
-                        // console.log(`${grid[rowN][colN].id} ${rowN}, ${colN}`)
-                        // On test les valeur absolue pour savoir si s'est alligné
-                        let test1 = Math.abs(rowIndex - rowN) ;
-                        // console.log("test1",test1)
-                        let test2 = Math.abs(cellIndex - colN) ;
-                        // console.log("test2",test2)
-                        let res1 = test1 === test2;
-
-                        if (res1 && rowN < rowIndex && colN < cellIndex ) {
-                            addUniqueObject(topBottomDiagCoordinateToScore, cellInfo);
-                        } else if (res1 && rowN > rowIndex && colN < cellIndex) {
-                            // console.log(`On diagonal${rowN}, ${colN}`)
-                            addUniqueObject(bottomTopDiagCoordinateToScore, cellInfo);
-                        } else if (res1 && rowN > rowIndex && colN > cellIndex) {
-                            // console.log(`On diagonal${rowN}, ${colN}`)
-                            addUniqueObject(topBottomDiagCoordinateToScore, cellInfo);
-                        } else if (res1 && rowN < rowIndex && colN > cellIndex) {
-                            // console.log(`On diagonal${rowN}, ${colN}`)
-                           addUniqueObject(bottomTopDiagCoordinateToScore, cellInfo);
+                        if (colN === cellIndex && fcol) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_col, cellInfo);
+                            } else {
+                                fcol = false;
+                            }
                         }
 
+                        let test1 = Math.abs(rowIndex - rowN);
+                        let test2 = Math.abs(cellIndex - colN);
+                        if (test1 === test2 && ftb) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_top_bottom, cellInfo);
+                            } else {
+                                ftb = false;
+                            }
+                        }
                     }
                 }
             }
+
+            const southEast = (rowIndex, cellIndex, aligned_row, aligned_col, aligned_bottom_top, grid, currentTurn) => {
+                let frow = true;
+                let fcol = true;
+                let fbt = true;
+                for (let rowN = rowIndex; rowN < 5; rowN++) {
+                    for (let colN = cellIndex; colN >= 0; colN--) {
+                        const cellInfo = { row : rowN, column: colN, haveScored: grid[rowN][colN].haveScored }
+                        // console.log(grid[rowN][colN]);
+                        if (rowN === rowIndex && frow) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_row, cellInfo);
+                            } else {
+                                frow = false;
+                            }
+                        }
+                        if (colN === cellIndex && fcol) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_col, cellInfo);
+                            } else {
+                                fcol = false;
+                            }
+                        }
+
+                        let test1 = Math.abs(rowIndex - rowN);
+                        let test2 = Math.abs(cellIndex - colN);
+                        if (test1 === test2 && fbt) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_bottom_top, cellInfo);
+                            } else {
+                                fbt = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const northEast = (rowIndex, cellIndex, aligned_row, aligned_col, aligned_top_bottom, grid, currentTurn) => {
+                let frow = true;
+                let fcol = true;
+                let ftb = true;
+                for (let rowN = rowIndex; rowN >= 0; rowN--) {
+                    for (let colN = cellIndex; colN >= 0; colN--) {
+                        const cellInfo = { row : rowN, column: colN, haveScored: grid[rowN][colN].haveScored }
+                        // console.log(grid[rowN][colN]);
+                        if (rowN === rowIndex && frow) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_row, cellInfo);
+                            } else {
+                                frow = false;
+                            }
+                        }
+                        if (colN === cellIndex && fcol) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_col, cellInfo);
+                            } else {
+                                fcol = false;
+                            }
+                        }
+
+                        let test1 = Math.abs(rowIndex - rowN);
+                        let test2 = Math.abs(cellIndex - colN);
+                        if (test1 === test2 && ftb) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_top_bottom, cellInfo);
+                            } else {
+                                ftb = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const northWest = (rowIndex, cellIndex, aligned_row, aligned_col, aligned_bottom_top, grid, currentTurn) => {
+                let frow = true;
+                let fcol = true;
+                let fbt = true;
+                for (let rowN = rowIndex; rowN >= 0; rowN--) {
+                    for (let colN = cellIndex; colN < 5; colN++) {
+                        const cellInfo = { row : rowN, column: colN, haveScored: grid[rowN][colN].haveScored }
+                        if (rowN === rowIndex && frow) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_row,cellInfo);
+                            } else {
+                                frow = false;
+                            }
+                        }
+                        if (colN === cellIndex && fcol) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_col, cellInfo);
+                            } else {
+                                fcol = false;
+                            }
+                        }
+
+                        let test1 = Math.abs(rowIndex - rowN);
+                        let test2 = Math.abs(cellIndex - colN);
+                        if (test1 === test2 && fbt) {
+                            if (grid[rowN][colN]['owner'] === currentTurn) {
+                                addUniqueObject(aligned_bottom_top, cellInfo);
+                            } else {
+                                fbt = false;
+                            }
+                        }
+                    }
+                }
+            }
+
+            northEast(rowIndex, cellIndex, rowCoordinateToScore, colCoordinateToScore, topBottomDiagCoordinateToScore, grid, gameState.currentTurn)
+            northWest(rowIndex, cellIndex, rowCoordinateToScore, colCoordinateToScore, bottomTopDiagCoordinateToScore, grid, gameState.currentTurn)
+            southEast(rowIndex, cellIndex, rowCoordinateToScore, colCoordinateToScore, bottomTopDiagCoordinateToScore, grid, gameState.currentTurn)
+            southWest(rowIndex, cellIndex, rowCoordinateToScore, colCoordinateToScore, topBottomDiagCoordinateToScore, grid, gameState.currentTurn)
+
+            if (rowCoordinateToScore.length === 5 || colCoordinateToScore.length === 5 ||
+                topBottomDiagCoordinateToScore.length === 5 || bottomTopDiagCoordinateToScore.length === 5) {
+                gameState.isFinished = true;
+                gameState.winner = gameState.currentTurn
+                grid[rowIndex][cellIndex].haveScored = true
+                return [gameState, grid]
+                // console.log("on final ", rowIndex, cellIndex)
+            }
+
             const cellsToUpdate = []
-            let maybeScoreOnRow = 0;
+
+            let  maybeScoreOnRow = 0
             if(rowCoordinateToScore.length   >= 3 ){
                 rowCoordinateToScore.forEach(cell => {
                     if(!cell.haveScored){
                         maybeScoreOnRow ++;
-                        addUniqueObject(cellsToUpdate, {row: cell.row, colum : cell.colum});
+                        addUniqueObject(cellsToUpdate, {row: cell.row, column : cell.column});
                     }
                 });
             }
 
             let maybeScoreOnCol =0;
-            if(colCoordinateToScore.length === 3 ){
+            if(colCoordinateToScore.length >= 3 ){
                 colCoordinateToScore.forEach(cell => {
                     if(!cell.haveScored){
                         maybeScoreOnCol ++;
-                        addUniqueObject(cellsToUpdate, {row: cell.row, colum : cell.colum});
+                        addUniqueObject(cellsToUpdate, {row: cell.row, column : cell.column});
                     }
 
                 });
@@ -415,7 +545,7 @@ const GameService = {
                 topBottomDiagCoordinateToScore.forEach(cell => {
                     if(!cell.haveScored){
                         maybeScoreOnTBD ++;
-                        addUniqueObject(cellsToUpdate, {row: cell.row, colum : cell.colum});
+                        addUniqueObject(cellsToUpdate, {row: cell.row, column : cell.column});
                     }
                 });
             }
@@ -425,81 +555,36 @@ const GameService = {
                 bottomTopDiagCoordinateToScore.forEach(cell => {
                     if(!cell.haveScored){
                         maybeScoreOnBTD ++;
-                        addUniqueObject(cellsToUpdate, {row: cell.row, colum : cell.colum});
+                        addUniqueObject(cellsToUpdate, {row: cell.row, column : cell.column});
                     }
                 });
             }
 
-            if(maybeScoreOnRow === 4){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score += 2
-                }
-                else {
-                    gameState.player2Score += 2
-                }
 
-            } else if ((rowCoordinateToScore.length === 4 && maybeScoreOnRow === 1)  || rowCoordinateToScore.length === 3){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score ++
-                }
-                else {
-                    gameState.player2Score ++
+
+            const updateScore = (gameState, maybeScore, coordinateToScore, currentTurn) => {
+                if (maybeScore === 4 || (maybeScore === 3 && coordinateToScore.length === 4)) {
+                    if (currentTurn === 'player:1') {
+                        gameState.player1Score += 2;
+                    } else {
+                        gameState.player2Score += 2;
+                    }
+                } else if ((coordinateToScore.length === 4 && maybeScore === 1) || coordinateToScore.length === 3) {
+                    if (currentTurn === 'player:1') {
+                        gameState.player1Score++;
+                    } else {
+                        gameState.player2Score++;
+                    }
                 }
             }
 
-            if(maybeScoreOnCol === 4){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score += 2
-                }
-                else {
-                    gameState.player2Score += 2
-                }
-
-            } else if ((colCoordinateToScore.length === 4 && maybeScoreOnCol === 1) || colCoordinateToScore.length === 3){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score ++
-                }
-                else {
-                    gameState.player2Score ++
-                }
-            }
-
-            if(maybeScoreOnTBD === 4){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score += 2
-                }
-                else {
-                    gameState.player2Score += 2
-                }
-
-            } else if ((topBottomDiagCoordinateToScore.length === 3 && maybeScoreOnTBD === 1) ||topBottomDiagCoordinateToScore.length === 3){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score ++
-                }
-                else {
-                    gameState.player2Score ++
-                }
-            }
-
-            if(maybeScoreOnBTD === 4){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score += 2
-                }
-                else {
-                    gameState.player2Score += 2
-                }
-
-            } else if ((bottomTopDiagCoordinateToScore.length === 4 || maybeScoreOnBTD === 1)  || bottomTopDiagCoordinateToScore.length === 3 ){
-                if(gameState.currentTurn === 'player:1'){
-                    gameState.player1Score ++
-                }
-                else {
-                    gameState.player2Score ++
-                }
-            }
+            updateScore(gameState, maybeScoreOnRow, rowCoordinateToScore, gameState.currentTurn);
+            updateScore(gameState, maybeScoreOnCol, colCoordinateToScore, gameState.currentTurn);
+            updateScore(gameState, maybeScoreOnTBD, topBottomDiagCoordinateToScore, gameState.currentTurn);
+            updateScore(gameState, maybeScoreOnBTD, bottomTopDiagCoordinateToScore, gameState.currentTurn);
 
             cellsToUpdate.forEach(cell => {
-                grid[cell.row][cell.colum].haveScored = true
+                grid[cell.row][cell.column].haveScored = true
             })
 
 

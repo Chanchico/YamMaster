@@ -3,6 +3,7 @@
 
 # Environment file
 .env
+.expo/
 
 # Build output
 /build

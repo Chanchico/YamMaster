@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SocketContext } from '../contexts/socket.context';
 import Board from "../components/board/board.component";
+import EndGameNotification from "../components/online-game/end-game-notification";
 
 export default function OnlineGameController() {
 
@@ -10,7 +11,8 @@ export default function OnlineGameController() {
     const [inQueue, setInQueue] = useState(false);
     const [inGame, setInGame] = useState(false);
     const [idOpponent, setIdOpponent] = useState(null);
-
+    const [gameEnded, setGameEnded] = useState(false);
+    const [gameState, setGameState] = useState(null);
     useEffect(() => {
 
         socket.emit("queue.join");
@@ -26,6 +28,11 @@ export default function OnlineGameController() {
             setInQueue(data['inQueue']);
             setInGame(data['inGame']);
             setIdOpponent(data['idOpponent']);
+        });
+
+        socket.on('game.game.end', (gameState) => {
+            setGameState(gameState);
+            setGameEnded(true); // When the game ends, set gameEnded to true
         });
 
     }, []);
@@ -55,7 +62,7 @@ export default function OnlineGameController() {
                     <Board />
                 </>
             )}
-
+            {gameEnded && <EndGameNotification gameState={gameState} onClose={() => setGameEnded(false)} />}
         </View>
     );
 }

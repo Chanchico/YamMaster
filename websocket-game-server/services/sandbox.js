@@ -41,6 +41,19 @@ let state =  {
     choices: {},
     deck: {}
 }
+
+const [v1, v2] = gameService.score.checkScore( 0, 2, state, grid);
+console.log(v1)
+//
+
+// grid = gameService.grid.selectCell('carre', 1, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell("sec", 1, 2, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('full', 1, 3, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('full', 2, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('defi', 2, 3, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('sec', 3, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('suite', 3, 2, state.currentTurn, grid)
+// grid = gameService.grid.selectCell("moinshuit", 3, 3, state.currentTurn, grid)
 // const [v1, v2] = gameService.score.checkScore( 0, 2, state, grid);
 //
 // state = v1
@@ -60,57 +73,57 @@ let state =  {
 // console.log(state)
 // console.log(grid[0])
 
-state.currentTurn = "player:2"
-grid = gameService.grid.selectCell('carre', 1, 1, state.currentTurn, grid)
-grid = gameService.grid.selectCell("sec", 1, 2, state.currentTurn, grid)
-grid = gameService.grid.selectCell('full', 1, 3, state.currentTurn, grid)
-grid = gameService.grid.selectCell('full', 2, 1, state.currentTurn, grid)
-grid = gameService.grid.selectCell('defi', 2, 3, state.currentTurn, grid)
-grid = gameService.grid.selectCell('sec', 3, 1, state.currentTurn, grid)
-grid = gameService.grid.selectCell('suite', 3, 2, state.currentTurn, grid)
-grid = gameService.grid.selectCell("moinshuit", 3, 3, state.currentTurn, grid)
-
-const rowIndex =2;
-const cellIndex = 2;
-const cellId = 'yam';
-grid = gameService.grid.selectCell(cellId, rowIndex, cellIndex, state.currentTurn, grid)
-const [v5, v6] = gameService.score.checkScore( rowIndex, cellIndex, state, grid);
-state = v5
-grid = v6
-
-
-const expectedGrid = [
-    [
-        { viewContent: '1', id: 'brelan1', owner: 'player:1', canBeChecked: false  , haveScored : true},
-        { viewContent: '3', id: 'brelan3', owner: 'player:1', canBeChecked: false  , haveScored : true},
-        { viewContent: 'Défi', id: 'defi', owner: 'player:1', canBeChecked: false  , haveScored : true},
-        { viewContent: '4', id: 'brelan4', owner: 'player:1', canBeChecked: false  , haveScored : true},
-        { viewContent: '6', id: 'brelan6', owner: null, canBeChecked: false  , haveScored : false}],
-    [
-        { viewContent: '2', id: 'brelan2', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: 'Carré', id: 'carre', owner:  'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: 'Sec', id: 'sec', owner:  'player:2', canBeChecked: true  , haveScored : true},
-        { viewContent: 'Full', id: 'full', owner:  'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: '5', id: 'brelan5', owner: null, canBeChecked: false  , haveScored : false}],
-    [
-        { viewContent: '≤8', id: 'moinshuit', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: 'Full', id: 'full', owner: 'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: 'Yam', id: 'yam', owner: 'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: 'Défi', id: 'defi', owner: 'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false  , haveScored : false}],
-    [
-        { viewContent: '6', id: 'brelan6', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: 'Sec', id: 'sec', owner:  'player:2', canBeChecked: true  , haveScored : true},
-        { viewContent: 'Suite', id: 'suite', owner:  'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: '≤8', id: 'moinshuit', owner:  'player:2', canBeChecked: false  , haveScored : true},
-        { viewContent: '1', id: 'brelan1', owner: null, canBeChecked: false  , haveScored : false}],
-    [
-        { viewContent: '3', id: 'brelan3', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: '2', id: 'brelan2', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: 'Carré', id: 'carre', owner: null, canBeChecked: false , haveScored : false },
-        { viewContent: '5', id: 'brelan5', owner: null, canBeChecked: false  , haveScored : false},
-        { viewContent: '4', id: 'brelan4', owner: null, canBeChecked: false  , haveScored : false}]
-];
+// state.currentTurn = "player:2"
+// grid = gameService.grid.selectCell('carre', 1, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell("sec", 1, 2, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('full', 1, 3, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('full', 2, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('defi', 2, 3, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('sec', 3, 1, state.currentTurn, grid)
+// grid = gameService.grid.selectCell('suite', 3, 2, state.currentTurn, grid)
+// grid = gameService.grid.selectCell("moinshuit", 3, 3, state.currentTurn, grid)
+//
+// const rowIndex =2;
+// const cellIndex = 2;
+// const cellId = 'yam';
+// grid = gameService.grid.selectCell(cellId, rowIndex, cellIndex, state.currentTurn, grid)
+// const [v5, v6] = gameService.score.checkScore( rowIndex, cellIndex, state, grid);
+// state = v5
+// grid = v6
+//
+//
+// const expectedGrid = [
+//     [
+//         { viewContent: '1', id: 'brelan1', owner: 'player:1', canBeChecked: false  , haveScored : true},
+//         { viewContent: '3', id: 'brelan3', owner: 'player:1', canBeChecked: false  , haveScored : true},
+//         { viewContent: 'Défi', id: 'defi', owner: 'player:1', canBeChecked: false  , haveScored : true},
+//         { viewContent: '4', id: 'brelan4', owner: 'player:1', canBeChecked: false  , haveScored : true},
+//         { viewContent: '6', id: 'brelan6', owner: null, canBeChecked: false  , haveScored : false}],
+//     [
+//         { viewContent: '2', id: 'brelan2', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: 'Carré', id: 'carre', owner:  'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: 'Sec', id: 'sec', owner:  'player:2', canBeChecked: true  , haveScored : true},
+//         { viewContent: 'Full', id: 'full', owner:  'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: '5', id: 'brelan5', owner: null, canBeChecked: false  , haveScored : false}],
+//     [
+//         { viewContent: '≤8', id: 'moinshuit', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: 'Full', id: 'full', owner: 'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: 'Yam', id: 'yam', owner: 'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: 'Défi', id: 'defi', owner: 'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: 'Suite', id: 'suite', owner: null, canBeChecked: false  , haveScored : false}],
+//     [
+//         { viewContent: '6', id: 'brelan6', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: 'Sec', id: 'sec', owner:  'player:2', canBeChecked: true  , haveScored : true},
+//         { viewContent: 'Suite', id: 'suite', owner:  'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: '≤8', id: 'moinshuit', owner:  'player:2', canBeChecked: false  , haveScored : true},
+//         { viewContent: '1', id: 'brelan1', owner: null, canBeChecked: false  , haveScored : false}],
+//     [
+//         { viewContent: '3', id: 'brelan3', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: '2', id: 'brelan2', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: 'Carré', id: 'carre', owner: null, canBeChecked: false , haveScored : false },
+//         { viewContent: '5', id: 'brelan5', owner: null, canBeChecked: false  , haveScored : false},
+//         { viewContent: '4', id: 'brelan4', owner: null, canBeChecked: false  , haveScored : false}]
+// ];
 // let user = {
 //     name :'fran',
 //     lastname : "traversi"
